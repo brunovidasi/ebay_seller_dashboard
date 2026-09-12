@@ -21,6 +21,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   getAuthStatus: () => request<EbayAuthStatus>("/ebay/auth/status"),
+  disconnect: () => request<EbayAuthStatus>("/ebay/auth/disconnect", { method: "POST" }),
   getInventoryItems: () => request<{ items: InventoryItem[] }>("/inventory/items"),
   bulkUpdate: (body: BulkUpdateRequest) =>
     request<{ results: BulkUpdateResult[] }>("/inventory/items/bulk", {

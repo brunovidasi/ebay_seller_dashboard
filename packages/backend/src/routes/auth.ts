@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomBytes } from "node:crypto";
-import { buildConsentUrl, exchangeCodeForTokens, getAuthStatus } from "../ebay/auth.js";
+import { buildConsentUrl, disconnect, exchangeCodeForTokens, getAuthStatus } from "../ebay/auth.js";
 import { env } from "../config/env.js";
 
 export const authRouter = Router();
@@ -32,4 +32,9 @@ authRouter.get("/callback", async (req, res) => {
 
 authRouter.get("/status", async (_req, res) => {
   res.json(await getAuthStatus());
+});
+
+authRouter.post("/disconnect", async (_req, res) => {
+  await disconnect();
+  res.json({ connected: false });
 });

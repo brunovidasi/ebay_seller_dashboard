@@ -1,5 +1,5 @@
 import { ebayHosts, env } from "../config/env.js";
-import { isExpired, loadTokens, saveTokens, type StoredTokens } from "../lib/tokenStore.js";
+import { clearTokens, isExpired, loadTokens, saveTokens, type StoredTokens } from "../lib/tokenStore.js";
 
 function basicAuthHeader(): string {
   const credentials = `${env.ebayClientId}:${env.ebayClientSecret}`;
@@ -93,6 +93,11 @@ export async function getValidAccessToken(): Promise<string | null> {
   if (!tokens.refreshToken) return null;
   const refreshed = await refreshAccessToken(tokens.refreshToken);
   return refreshed.accessToken;
+}
+
+/** Drops the locally cached tokens so the seller can connect a different sandbox account. */
+export async function disconnect(): Promise<void> {
+  await clearTokens();
 }
 
 export async function getAuthStatus(): Promise<{ connected: boolean; expiresAt?: string }> {

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { env } from "../config/env.js";
 
@@ -30,4 +30,9 @@ export async function saveTokens(tokens: StoredTokens): Promise<void> {
 
 export function isExpired(tokens: StoredTokens): boolean {
   return new Date(tokens.accessTokenExpiresAt).getTime() <= Date.now() + 30_000;
+}
+
+export async function clearTokens(): Promise<void> {
+  cache = null;
+  await rm(env.tokenStorePath, { force: true });
 }
