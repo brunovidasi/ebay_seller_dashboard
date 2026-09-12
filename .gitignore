@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+build/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# local data / token storage
+.data/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / os
+.DS_Store
+.vscode/
+.idea/
+
+# vite
+packages/frontend/.vite/
