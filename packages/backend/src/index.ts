@@ -6,6 +6,7 @@ import { env } from "./config/env.js";
 import { authRouter } from "./routes/auth.js";
 import { inventoryRouter } from "./routes/inventory.js";
 import { healthRouter } from "./routes/health.js";
+import { devRouter } from "./routes/dev.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use("/api/health", healthRouter);
 app.use("/api/ebay/auth", authRouter);
 app.use("/api/inventory", inventoryRouter);
+app.use("/api/dev", devRouter);
 
 const hasTlsCert = existsSync(env.tlsKeyPath) && existsSync(env.tlsCertPath);
 

@@ -28,3 +28,15 @@ export interface EbayAuthStatus {
   connected: boolean;
   expiresAt?: string;
 }
+
+export interface SeedListingInput {
+  title?: string;
+  price?: number;
+  quantity?: number;
+}
+
+export interface SeedListingResult {
+  sku: string;
+  offerId: string;
+  listingId: string;
+}

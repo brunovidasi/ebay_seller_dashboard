@@ -12,12 +12,14 @@ export default function Products() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [edits, setEdits] = useState<Record<string, EditState>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
 
   function loadItems() {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     api
       .getInventoryItems()
       .then((res) => {
@@ -31,7 +33,7 @@ export default function Products() {
           ),
         );
       })
-      .catch((err: Error) => setError(err.message))
+      .catch((err: Error) => setLoadError(err.message))
       .finally(() => setLoading(false));
   }
 
@@ -59,7 +61,7 @@ export default function Products() {
     }
 
     setMessage(null);
-    setError(null);
+    setActionError(null);
     try {
       const { results } = await api.bulkUpdate({ updates });
       const failed = results.filter((r) => !r.success);
@@ -70,17 +72,33 @@ export default function Products() {
       }
       loadItems();
     } catch (err) {
-      setError((err as Error).message);
+      setActionError((err as Error).message);
+    }
+  }
+
+  async function seedTestListing() {
+    setSeeding(true);
+    setMessage(null);
+    setActionError(null);
+    try {
+      const result = await api.seedListing({});
+      setMessage(`Created and published test listing (SKU ${result.sku}, listing ${result.listingId}).`);
+      loadItems();
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setSeeding(false);
     }
   }
 
   if (loading) return <p>Loading inventory…</p>;
-  if (error) return <p className="error">{error}</p>;
+  if (loadError) return <p className="error">{loadError}</p>;
 
   return (
     <section>
       <h2>Products</h2>
       {message && <p className="notice">{message}</p>}
+      {actionError && <p className="error">{actionError}</p>}
       <table>
         <thead>
           <tr>
@@ -131,6 +149,9 @@ export default function Products() {
       {items.length === 0 && <p>No inventory items found yet.</p>}
       <button className="button" onClick={applyBulkUpdate}>
         Apply bulk update to selected rows
+      </button>{" "}
+      <button className="button" onClick={seedTestListing} disabled={seeding}>
+        {seeding ? "Creating test listing…" : "Seed a test listing (sandbox only)"}
       </button>
     </section>
   );

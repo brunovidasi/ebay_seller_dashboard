@@ -1,25 +1,6 @@
 import type { BulkUpdateEntry, BulkUpdateResult, InventoryItem } from "shared";
-import { ebayHosts, env } from "../config/env.js";
-import { getValidAccessToken } from "./auth.js";
-
-async function ebayFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const accessToken = await getValidAccessToken();
-  if (!accessToken) {
-    throw new Error("Not connected to eBay yet. Visit /api/ebay/auth/login first.");
-  }
-
-  return fetch(`${ebayHosts.api}${path}`, {
-    ...init,
-    headers: {
-      ...init.headers,
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      "Content-Language": env.ebayContentLanguage,
-      "Accept-Language": env.ebayContentLanguage,
-      "X-EBAY-C-MARKETPLACE-ID": env.ebayMarketplaceId,
-    },
-  });
-}
+import { env } from "../config/env.js";
+import { ebayFetch } from "./client.js";
 
 interface EbayInventoryItemResponse {
   sku: string;

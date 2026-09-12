@@ -1,4 +1,11 @@
-import type { BulkUpdateRequest, BulkUpdateResult, EbayAuthStatus, InventoryItem } from "shared";
+import type {
+  BulkUpdateRequest,
+  BulkUpdateResult,
+  EbayAuthStatus,
+  InventoryItem,
+  SeedListingInput,
+  SeedListingResult,
+} from "shared";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -18,6 +25,11 @@ export const api = {
   bulkUpdate: (body: BulkUpdateRequest) =>
     request<{ results: BulkUpdateResult[] }>("/inventory/items/bulk", {
       method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  seedListing: (body: SeedListingInput) =>
+    request<SeedListingResult>("/dev/seed-listing", {
+      method: "POST",
       body: JSON.stringify(body),
     }),
 };
