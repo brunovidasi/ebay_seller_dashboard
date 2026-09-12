@@ -1,8 +1,6 @@
 import type { BulkUpdateEntry, BulkUpdateResult, InventoryItem } from "shared";
-import { ebayHosts } from "../config/env.js";
+import { ebayHosts, env } from "../config/env.js";
 import { getValidAccessToken } from "./auth.js";
-
-const MARKETPLACE_ID = "EBAY_US";
 
 async function ebayFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const accessToken = await getValidAccessToken();
@@ -16,7 +14,9 @@ async function ebayFetch(path: string, init: RequestInit = {}): Promise<Response
       ...init.headers,
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-      "X-EBAY-C-MARKETPLACE-ID": MARKETPLACE_ID,
+      "Content-Language": env.ebayContentLanguage,
+      "Accept-Language": env.ebayContentLanguage,
+      "X-EBAY-C-MARKETPLACE-ID": env.ebayMarketplaceId,
     },
   });
 }
@@ -35,39 +35,41 @@ interface EbayOfferResponse {
 }
 
 /**
+ * eBay's GET /offer only supports looking up offers for one SKU at a time (there's no
+ * "list all offers" call), so this fetches the offer per inventory item's SKU.
+ */
+async function getOfferForSku(sku: string): Promise<EbayOfferResponse | undefined> {
+  const response = await ebayFetch(`/sell/inventory/v1/offer?sku=${encodeURIComponent(sku)}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch offer for SKU ${sku}: ${await response.text()}`);
+  }
+  const body = (await response.json()) as { offers?: EbayOfferResponse[] };
+  return body.offers?.[0];
+}
+
+/**
  * Merges eBay's inventory items (stock/title) with their offers (price/listing status)
  * since the Inventory API splits "what it is" from "how it's listed" across two endpoints.
  */
 export async function listInventoryItems(): Promise<InventoryItem[]> {
-  const [itemsRes, offersRes] = await Promise.all([
-    ebayFetch("/sell/inventory/v1/inventory_item?limit=100"),
-    ebayFetch("/sell/inventory/v1/offer?limit=100"),
-  ]);
-
+  const itemsRes = await ebayFetch("/sell/inventory/v1/inventory_item?limit=100");
   if (!itemsRes.ok) {
     throw new Error(`Failed to list inventory items: ${await itemsRes.text()}`);
   }
-  if (!offersRes.ok) {
-    throw new Error(`Failed to list offers: ${await offersRes.text()}`);
-  }
-
   const itemsBody = (await itemsRes.json()) as { inventoryItems?: EbayInventoryItemResponse[] };
-  const offersBody = (await offersRes.json()) as { offers?: EbayOfferResponse[] };
+  const items = itemsBody.inventoryItems ?? [];
 
-  const offersBySku = new Map<string, EbayOfferResponse>();
-  for (const offer of offersBody.offers ?? []) {
-    offersBySku.set(offer.sku, offer);
-  }
+  const offers = await Promise.all(items.map((item) => getOfferForSku(item.sku)));
 
-  return (itemsBody.inventoryItems ?? []).map((item): InventoryItem => {
-    const offer = offersBySku.get(item.sku);
+  return items.map((item, index): InventoryItem => {
+    const offer = offers[index];
     const quantity = item.availability?.shipToLocationAvailability?.quantity ?? 0;
     return {
       sku: item.sku,
       title: item.product?.title ?? "(untitled)",
       quantity,
       price: Number(offer?.pricingSummary?.price?.value ?? 0),
-      currency: offer?.pricingSummary?.price?.currency ?? "USD",
+      currency: offer?.pricingSummary?.price?.currency ?? env.ebayCurrency,
       listingId: offer?.listingId,
       status: offer?.status === "PUBLISHED" ? (quantity > 0 ? "ACTIVE" : "OUT_OF_STOCK") : "UNKNOWN",
     };
@@ -85,7 +87,10 @@ export async function bulkUpdatePriceQuantity(
     sku: entry.sku,
     shipToLocationAvailability:
       entry.quantity === undefined ? undefined : { quantity: entry.quantity },
-    price: entry.price === undefined ? undefined : { value: String(entry.price), currency: "USD" },
+    price:
+      entry.price === undefined
+        ? undefined
+        : { value: String(entry.price), currency: env.ebayCurrency },
   }));
 
   const response = await ebayFetch("/sell/inventory/v1/bulk_update_price_quantity", {

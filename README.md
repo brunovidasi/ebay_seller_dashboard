@@ -43,6 +43,13 @@ Requires Node 20+.
 npm install
 ```
 
+### Marketplace
+
+Defaults to `EBAY_AU` / `AUD` (`EBAY_MARKETPLACE_ID` / `EBAY_CURRENCY` in `.env`), since this is
+being built for the Australian eBay site. Change those two values to target a different
+marketplace — they control the `X-EBAY-C-MARKETPLACE-ID` header sent on every Inventory API call
+and the currency used for price updates.
+
 ### eBay credentials
 
 The backend reads eBay credentials from `packages/backend/.env` (already created locally from
