@@ -13,6 +13,9 @@ build/
 # local data / token storage
 .data/
 
+# self-signed dev TLS certs (generated locally, see packages/backend/scripts/gen-cert.sh)
+certs/
+
 # logs
 *.log
 npm-debug.log*

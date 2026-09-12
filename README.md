@@ -47,16 +47,23 @@ npm install
 
 The backend reads eBay credentials from `packages/backend/.env` (already created locally from
 `packages/backend/.env.example`, gitignored — never commit it). It's pre-filled with the
-sandbox keyset, **except `EBAY_RU_NAME`**, which you still need to fill in:
+sandbox keyset and `EBAY_RU_NAME`.
 
-1. In the [eBay Developer Program](https://developer.ebay.com/my/keys), open your sandbox
-   keyset → **User Tokens** → **"Get a Token from eBay via Your Application"**.
-2. Add `http://localhost:4000/api/ebay/auth/callback` as an accepted redirect URL and copy the
-   generated **RuName** into `EBAY_RU_NAME` in `packages/backend/.env`.
+If you need to regenerate the RuName: in the [eBay Developer Program](https://developer.ebay.com/my/keys),
+open your sandbox keyset → **User Tokens** → **"Get a Token from eBay via Your Application"**,
+add `https://localhost:4000/api/ebay/auth/callback` as the accepted redirect URL (eBay forces
+`https://` here — see note below), select the **OAuth (new security)** option (not the legacy
+Auth'n'Auth flow), and copy the generated **RuName** into `EBAY_RU_NAME`.
 
-> Note: double-check `EBAY_CLIENT_SECRET` (Cert ID) in the .env against the Developer Portal —
-> the value provided during setup looked shorter than eBay's usual Cert ID format, so it's worth
-> confirming before relying on it.
+### Local HTTPS
+
+eBay requires the redirect URL to be `https://`, but there's no real domain/cert for
+`localhost`. `npm run dev` auto-generates a self-signed TLS cert (`packages/backend/certs/`,
+gitignored — see `packages/backend/scripts/gen-cert.sh`) and the backend serves HTTPS on
+`https://localhost:4000` using it. This is dev-only: the cert isn't added to any system trust
+store, so your browser will show a "connection is not private" warning the first time it hits
+`https://localhost:4000` directly (during the OAuth callback) — click through it
+(Advanced → Proceed), it's expected for a self-signed local cert.
 
 ### Run
 
@@ -64,11 +71,14 @@ sandbox keyset, **except `EBAY_RU_NAME`**, which you still need to fill in:
 npm run dev
 ```
 
-This starts the backend on `http://localhost:4000` and the frontend on `http://localhost:5173`
-(the frontend proxies `/api` to the backend, see `packages/frontend/vite.config.ts`).
+This starts the backend on `https://localhost:4000` and the frontend on `http://localhost:5173`
+(the frontend dev server proxies `/api` to the backend over HTTPS, see
+`packages/frontend/vite.config.ts`).
 
-Open `http://localhost:5173`, click **Connect to eBay**, log in with a sandbox test user, and
-you'll be redirected back once the OAuth tokens are stored.
+Open `http://localhost:5173`, click **Connect to eBay**, log in with a sandbox test user, accept
+the one-time browser security warning when eBay redirects back to
+`https://localhost:4000/api/ebay/auth/callback`, and you'll land back on the dashboard once the
+OAuth tokens are stored.
 
 ## Roadmap
 

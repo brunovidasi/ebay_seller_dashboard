@@ -6,7 +6,13 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:4000",
+      // Backend serves HTTPS in dev (eBay's RuName requires an https:// redirect
+      // URL); `secure: false` skips the self-signed cert check for this proxy.
+      "/api": {
+        target: "https://localhost:4000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

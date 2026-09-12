@@ -19,6 +19,8 @@ export const env = {
   port: Number(process.env.PORT ?? 4000),
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:5173",
   tokenStorePath: process.env.TOKEN_STORE_PATH ?? ".data/ebay-tokens.json",
+  tlsKeyPath: process.env.TLS_KEY_PATH ?? "certs/localhost-key.pem",
+  tlsCertPath: process.env.TLS_CERT_PATH ?? "certs/localhost-cert.pem",
 };
 
 export const ebayHosts =
